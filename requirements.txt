@@ -1,2 +1,4 @@
 flask
 tinydb
+jedi
+pylint
