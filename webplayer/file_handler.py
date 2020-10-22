@@ -6,8 +6,10 @@ import hashlib
 from collections import namedtuple
 from tinydb import TinyDB, where
 from flask import Blueprint
+from flask_cors import CORS, cross_origin
 
 mod = Blueprint('file_handler', __name__, url_prefix='/file')
+cors = CORS(mod)
 
 DirectoryEntry = namedtuple('DirectoryEntry', ['id', 'name', 'path', 'url', 'files'])
 
@@ -57,9 +59,16 @@ class Scanner:
     def _scan(self, path, url):
         for root, _, files in os.walk(path):
             if any([(os.path.splitext(f)[1] in self.audio) for f in files]):
+                base_url = root.replace(path, url)
+                files = sorted([f for f in files if os.path.splitext(f)[1] in self.audio])
                 entry = DirectoryEntry(self._hashsum(root), os.path.basename(root),
-                        root, root.replace(path, url), files)
+                        root, base_url, self._get_files(files, base_url))
                 self.cache.put(entry)
+
+    @staticmethod
+    def _get_files(files, base_url):
+        return [{'name': file_name, 'url': '{}/{}'.format(base_url, file_name)}
+                for file_name in files]
 
     @staticmethod
     def _hashsum(path):
@@ -83,6 +92,7 @@ def scan():
 
 
 @mod.route('/')
+@cross_origin()
 def directories():
     '''return the already scanned directory entries'''
     return json.dumps([d._asdict() for d in mod.scanner.directories()])
