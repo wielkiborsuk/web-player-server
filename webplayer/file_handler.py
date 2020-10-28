@@ -17,20 +17,24 @@ class DirectoryRepo:
     '''repository used to manage scanned directories objects in a database'''
     def __init__(self, dbfile):
         '''create repository using a specific database file'''
-        self.dataase = TinyDB(dbfile)
+        self.table = TinyDB(dbfile).table('directories')
 
     def put(self, directory:DirectoryEntry):
         '''put new or update a directory entry'''
-        self.dataase.upsert(directory._asdict(), where('id') == directory.id)
+        self.table.upsert(directory._asdict(), where('id') == directory.id)
 
     def get(self, absolute_path) -> DirectoryEntry:
         '''get a directory entry by absolute path'''
-        result = self.dataase.search(where('id') == absolute_path)
+        result = self.table.search(where('id') == absolute_path)
         return DirectoryEntry(**result[0]) if result else None
+
+    def delete(self, idx):
+        '''remove an entry from the table'''
+        self.table.remove(where('id') == idx)
 
     def list(self) -> DirectoryEntry:
         '''return all directories, for debugging purposes'''
-        return [DirectoryEntry(**row) for row in self.dataase.all()]
+        return [DirectoryEntry(**row) for row in self.table.all()]
 
 
 class Scanner:
@@ -55,6 +59,10 @@ class Scanner:
     def directory(self, idx):
         '''return a specific scanned directory entry'''
         return self.cache.get(idx)
+
+    def clear(self, idx):
+        '''clear cached directory'''
+        self.cache.delete(idx)
 
     def _scan(self, path, url):
         for root, _, files in os.walk(path):
@@ -82,7 +90,7 @@ class Scanner:
 def pass_config(state):
     '''copy config from main app'''
     mod.config = state.app.config.copy()
-    mod.scanner = Scanner(DirectoryRepo(mod.config.get('DIRECTORY_DB_FILE')))
+    mod.scanner = Scanner(DirectoryRepo(mod.config.get('DB_FILE')))
 
 @mod.route('/scan')
 def scan():
@@ -98,7 +106,16 @@ def directories():
     return json.dumps([d._asdict() for d in mod.scanner.directories()])
 
 
-@mod.route('/<idx>')
+@mod.route('/<idx>', methods=['GET'])
+@cross_origin()
 def get_directory(idx):
     '''return a specific directory playlist'''
     return json.dumps(mod.scanner.directory(idx)._asdict())
+
+
+@mod.route('/<idx>', methods=['DELETE'])
+@cross_origin()
+def delete_directory(idx):
+    '''delete a specific cached directory playlist'''
+    mod.scanner.clear(idx)
+    return ''
