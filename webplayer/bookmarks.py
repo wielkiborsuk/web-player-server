@@ -8,7 +8,7 @@ from flask_cors import CORS, cross_origin
 mod = Blueprint('bookmark_handler', __name__, url_prefix='/bookmark')
 cors = CORS(mod)
 
-Bookmark = namedtuple('Bookmark', ['id', 'file', 'time'])
+Bookmark = namedtuple('Bookmark', ['id', 'name', 'file', 'time'])
 
 
 class BookmarkRepo:

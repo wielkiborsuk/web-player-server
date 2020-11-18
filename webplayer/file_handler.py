@@ -11,7 +11,7 @@ from flask_cors import CORS, cross_origin
 mod = Blueprint('file_handler', __name__, url_prefix='/file')
 cors = CORS(mod)
 
-DirectoryEntry = namedtuple('DirectoryEntry', ['id', 'name', 'path', 'url', 'files'])
+DirectoryEntry = namedtuple('DirectoryEntry', ['id', 'name', 'path', 'url', 'files', 'is_book'])
 
 class DirectoryRepo:
     '''repository used to manage scanned directories objects in a database'''
@@ -32,9 +32,18 @@ class DirectoryRepo:
         '''remove an entry from the table'''
         self.table.remove(where('id') == idx)
 
-    def list(self) -> DirectoryEntry:
+    def list(self) -> list:
         '''return all directories, for debugging purposes'''
         return [DirectoryEntry(**row) for row in self.table.all()]
+
+    def albums(self) -> list:
+        '''return music album directories'''
+        return [DirectoryEntry(**row) for row in self.table.search(where('is_book') == False)]
+
+    def books(self) -> list:
+        '''return audio book directories'''
+        return [DirectoryEntry(**row) for row in self.table.search(where('is_book') == True)]
+
 
 
 class Scanner:
@@ -52,9 +61,13 @@ class Scanner:
         self._scan(path, url)
         return self.cache.list()
 
-    def directories(self):
+    def albums(self):
         '''return scanned and cached directories'''
-        return self.cache.list()
+        return self.cache.albums()
+
+    def books(self):
+        '''return scanned and cached directories'''
+        return self.cache.books()
 
     def directory(self, idx):
         '''return a specific scanned directory entry'''
@@ -64,13 +77,17 @@ class Scanner:
         '''clear cached directory'''
         self.cache.delete(idx)
 
-    def _scan(self, path, url):
-        for root, _, files in os.walk(path):
+    def _scan(self, path, url, look_for_books=False):
+        for root, directories, files in os.walk(path):
+            base_url = root.replace(path, url)
+            if not look_for_books and '.nomedia' in files:
+                directories[:] = []
+                self._scan(root, base_url, look_for_books=True)
+                continue
             if any([(os.path.splitext(f)[1] in self.audio) for f in files]):
-                base_url = root.replace(path, url)
                 files = sorted([f for f in files if os.path.splitext(f)[1] in self.audio])
                 entry = DirectoryEntry(self._hashsum(root), os.path.basename(root),
-                        root, base_url, self._get_files(files, base_url))
+                        root, base_url, self._get_files(files, base_url), look_for_books)
                 self.cache.put(entry)
 
     @staticmethod
@@ -95,15 +112,21 @@ def pass_config(state):
 @mod.route('/scan')
 def scan():
     '''scan default directories'''
-    mod.scanner.scan()
-    return directories()
+    return json.dumps([d._asdict() for d in mod.scanner.scan()])
 
 
 @mod.route('/')
 @cross_origin()
-def directories():
+def albums():
     '''return the already scanned directory entries'''
-    return json.dumps([d._asdict() for d in mod.scanner.directories()])
+    return json.dumps([d._asdict() for d in mod.scanner.albums()])
+
+
+@mod.route('/book/')
+@cross_origin()
+def books():
+    '''return the already scanned directory entries'''
+    return json.dumps([d._asdict() for d in mod.scanner.books()])
 
 
 @mod.route('/<idx>', methods=['GET'])
