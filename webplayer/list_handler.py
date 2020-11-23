@@ -3,37 +3,20 @@ import json
 from collections import namedtuple
 import yaml
 
-from tinydb import TinyDB, where
+from tinydb import where
 from flask import Blueprint, request
 from flask_cors import CORS, cross_origin
+from webplayer.dbaccess import GenericRepo
 
 mod = Blueprint('list_handler', __name__, url_prefix='/list')
 cors = CORS(mod)
 
 ListEntry = namedtuple('ListEntry', ['id', 'name', 'files', 'is_book'])
 
-class ListRepo:
-    '''repository used to manage handmage playlist objects in a database'''
+class ListRepo(GenericRepo):
+    '''repo for editable list objects'''
     def __init__(self, dbfile):
-        '''create repository using a specific database file'''
-        self.table = TinyDB(dbfile).table('lists')
-
-    def put(self, list_obj:ListEntry):
-        '''put new or update a directory entry'''
-        self.table.upsert(list_obj._asdict(), where('id') == list_obj.id)
-
-    def get(self, idx) -> ListEntry:
-        '''get an entry by id'''
-        result = self.table.search(where('id') == idx)
-        return ListEntry(**result[0]) if result else None
-
-    def delete(self, idx):
-        '''remove an entry from the table'''
-        self.table.remove(where('id') == idx)
-
-    def list(self) -> ListEntry:
-        '''return all directories, for debugging purposes'''
-        return [ListEntry(**row) for row in self.table.all()]
+        super().__init__(dbfile, 'lists', 'id', ListEntry)
 
     def lists(self) -> ListEntry:
         '''return editable playlists'''
@@ -50,11 +33,11 @@ def load_podcasts(repo, podcast_file):
         return
 
     with open(podcast_file, 'r') as url_file:
-        url_map = yaml.load(url_file)
-        for k,v in url_map.items():
+        url_map = yaml.safe_load(url_file)
+        for key,value in url_map.items():
             file_list = sorted([{'name': entry['filename'], 'url': entry['url']}
-                for entry in v], key=lambda e: e['name'])
-            entry = ListEntry(k, k, file_list, True)
+                for entry in value], key=lambda e: e['name'])
+            entry = ListEntry(key, key, file_list, True)
             repo.put(entry)
 
 

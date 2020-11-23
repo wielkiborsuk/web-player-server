@@ -4,37 +4,20 @@ import os
 import hashlib
 
 from collections import namedtuple
-from tinydb import TinyDB, where
+from tinydb import where
 from flask import Blueprint
 from flask_cors import CORS, cross_origin
+from webplayer.dbaccess import GenericRepo
 
 mod = Blueprint('file_handler', __name__, url_prefix='/file')
 cors = CORS(mod)
 
 DirectoryEntry = namedtuple('DirectoryEntry', ['id', 'name', 'path', 'url', 'files', 'is_book'])
 
-class DirectoryRepo:
-    '''repository used to manage scanned directories objects in a database'''
+class DirectoryRepo(GenericRepo):
+    '''repository for Directory objects'''
     def __init__(self, dbfile):
-        '''create repository using a specific database file'''
-        self.table = TinyDB(dbfile).table('directories')
-
-    def put(self, directory:DirectoryEntry):
-        '''put new or update a directory entry'''
-        self.table.upsert(directory._asdict(), where('id') == directory.id)
-
-    def get(self, absolute_path) -> DirectoryEntry:
-        '''get a directory entry by absolute path'''
-        result = self.table.search(where('id') == absolute_path)
-        return DirectoryEntry(**result[0]) if result else None
-
-    def delete(self, idx):
-        '''remove an entry from the table'''
-        self.table.remove(where('id') == idx)
-
-    def list(self) -> list:
-        '''return all directories, for debugging purposes'''
-        return [DirectoryEntry(**row) for row in self.table.all()]
+        super().__init__(dbfile, 'directories', 'id', DirectoryEntry)
 
     def albums(self) -> list:
         '''return music album directories'''
