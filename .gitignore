@@ -2,4 +2,5 @@ venv/
 __pycache__
 testdb.json
 directorydb.json
+instance/
 
