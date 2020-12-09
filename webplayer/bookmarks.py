@@ -1,7 +1,7 @@
 '''bookmark manager functionality for podcasts and audiobooks'''
 import json
 from collections import namedtuple
-from flask import Blueprint, request
+from flask import Blueprint, request, abort
 from flask_cors import CORS, cross_origin
 from webplayer.dbaccess import GenericRepo
 
@@ -57,7 +57,11 @@ def put_list(idx):
 @mod.route('/<idx>', methods=['GET'])
 def get_bookmark(idx):
     '''get a specific bookmark'''
-    return json.dumps(_get_repo().get(idx)._asdict())
+    bookmark = _get_repo().get(idx)
+    if bookmark:
+        return json.dumps(bookmark._asdict())
+    else:
+        abort(404)
 
 
 @mod.route('/<idx>', methods=['DELETE'])
