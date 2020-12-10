@@ -47,12 +47,12 @@ def pass_config(state):
     '''copy config from main app'''
     mod.config = state.app.config.copy()
     mod.repo = ListRepo(mod.config.get('DB_FILE'))
-    load_podcasts(mod.repo, mod.config.get('PODCAST_FILE'))
 
 
 @mod.route('/book/', methods=['GET'])
 def podcasts():
     '''return the book/podcast entries'''
+    load_podcasts(mod.repo, mod.config.get('PODCAST_FILE'))
     return json.dumps([d._asdict() for d in mod.repo.books()])
 
 
