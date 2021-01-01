@@ -32,7 +32,7 @@ def load_podcasts(repo, podcast_file):
     if not podcast_file:
         return
 
-    with open(podcast_file, 'r') as url_file:
+    with open(podcast_file, 'r', encoding='utf-8') as url_file:
         url_map = yaml.safe_load(url_file)
         for key,value in url_map.items():
             file_list = sorted([{'name': entry['filename'], 'url': entry['url']}
