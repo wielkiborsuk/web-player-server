@@ -1,4 +1,7 @@
 venv/
+dist/
+build/
+web_player_server.egg-info/
 __pycache__
 testdb.json
 directorydb.json

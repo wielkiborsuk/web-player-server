@@ -7,7 +7,7 @@ from webplayer.config import mod as mod_config_handler
 
 app = Flask(__name__, instance_relative_config=True)
 
-app.config.from_object('config')
+app.config.from_object('webplayer.default_settings')
 app.config.from_pyfile('webplayer.cfg', silent=True)
 
 app.register_blueprint(mod_file_handler)
