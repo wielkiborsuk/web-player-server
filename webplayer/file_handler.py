@@ -4,7 +4,6 @@ import os
 import hashlib
 
 from collections import namedtuple
-from tinydb import where
 from flask import Blueprint
 from flask_cors import CORS, cross_origin
 from webplayer.dbaccess import GenericRepo
@@ -21,11 +20,11 @@ class DirectoryRepo(GenericRepo):
 
     def albums(self) -> list:
         '''return music album directories'''
-        return [DirectoryEntry(**row) for row in self.table.search(where('is_book') == False)]
+        return self._query('is_book', False)
 
     def books(self) -> list:
         '''return audio book directories'''
-        return [DirectoryEntry(**row) for row in self.table.search(where('is_book') == True)]
+        return self._query('is_book', True)
 
 
 

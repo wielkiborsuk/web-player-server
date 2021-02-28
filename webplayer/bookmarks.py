@@ -34,7 +34,7 @@ def create_bookmark():
     body = request.json
     repo.put(Bookmark(**body))
 
-    return json.dumps(repo.get(body['id']))
+    return json.dumps(repo.get(body['id'])._asdict())
 
 
 @mod.route('/')

@@ -3,7 +3,6 @@ import json
 from collections import namedtuple
 import yaml
 
-from tinydb import where
 from flask import Blueprint, request
 from flask_cors import CORS, cross_origin
 from webplayer.dbaccess import GenericRepo
@@ -20,11 +19,11 @@ class ListRepo(GenericRepo):
 
     def lists(self) -> ListEntry:
         '''return editable playlists'''
-        return [ListEntry(**row) for row in self.table.search(where('is_book') == False)]
+        return self._query('is_book', False)
 
     def books(self) -> ListEntry:
         '''return book/podcast saved entries'''
-        return [ListEntry(**row) for row in self.table.search(where('is_book') == True)]
+        return self._query('is_book', True)
 
 
 def load_podcasts(repo, podcast_file):
