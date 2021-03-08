@@ -20,6 +20,20 @@ def _get_repo():
     return BookmarkRepo(mod.config.get('DB_FILE'))
 
 
+def _is_after(mark_a, mark_b):
+    return (mark_a.file > mark_b.file or
+            (mark_a.file == mark_b.file and mark_a.time > mark_b.time))
+
+
+def _save_bookmark(repo, entry, overwrite=False):
+    prev = repo.get(entry.id)
+    if overwrite or not (prev and _is_after(prev, entry)):
+        repo.put(entry)
+        return json.dumps(repo.get(entry.id)._asdict()), 200
+
+    return json.dumps(repo.get(entry.id)._asdict()), 409
+
+
 @mod.record_once
 def pass_config(state):
     '''configure bookmark module with app config'''
@@ -30,11 +44,11 @@ def pass_config(state):
 @cross_origin()
 def create_bookmark():
     '''put a new bookmark for a specific album'''
-    repo = _get_repo()
-    body = request.json
-    repo.put(Bookmark(**body))
+    bookmark_dict = request.json
+    entry = Bookmark(**bookmark_dict)
+    overwrite = request.args.get('overwrite', 'false').lower() == 'true'
 
-    return json.dumps(repo.get(body['id'])._asdict())
+    return _save_bookmark(_get_repo(), entry, overwrite)
 
 
 @mod.route('/')
@@ -50,8 +64,9 @@ def put_list(idx):
     bookmark_dict = request.json
     bookmark_dict['id'] = idx
     entry = Bookmark(**bookmark_dict)
-    _get_repo().put(entry)
-    return ''
+    overwrite = request.args.get('overwrite', 'false').lower() == 'true'
+
+    return _save_bookmark(_get_repo(), entry, overwrite)
 
 
 @mod.route('/<idx>', methods=['GET'])
@@ -60,8 +75,8 @@ def get_bookmark(idx):
     bookmark = _get_repo().get(idx)
     if bookmark:
         return json.dumps(bookmark._asdict())
-    else:
-        abort(404)
+
+    return abort(404)
 
 
 @mod.route('/<idx>', methods=['DELETE'])
