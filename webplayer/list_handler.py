@@ -34,9 +34,11 @@ def load_podcasts(repo, podcast_file):
     with open(podcast_file, 'r', encoding='utf-8') as url_file:
         url_map = yaml.safe_load(url_file)
         for key,value in url_map.items():
-            file_list = sorted([{'name': entry['filename'], 'url': entry['url']}
-                for entry in value], key=lambda e: e['name'])
-            entry = ListEntry(key, key, file_list, True)
+            name_set = set()
+            file_list = [{'name': entry['filename'], 'url': entry['url']}
+                for entry in value
+                if entry['filename'] not in name_set and not name_set.add(entry['filename'])]
+            entry = ListEntry(key, key, sorted(file_list, key=lambda e: e['name']), True)
             repo.put(entry)
 
 
