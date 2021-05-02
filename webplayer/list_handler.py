@@ -1,9 +1,8 @@
 '''scanner module for handling audio files on local drive'''
-import json
 from collections import namedtuple
 import yaml
 
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from flask_cors import CORS, cross_origin
 from webplayer.dbaccess import GenericRepo
 
@@ -19,11 +18,11 @@ class ListRepo(GenericRepo):
 
     def lists(self) -> ListEntry:
         '''return editable playlists'''
-        return self._query('is_book', False)
+        return self._query('is_book', 0)
 
     def books(self) -> ListEntry:
         '''return book/podcast saved entries'''
-        return self._query('is_book', True)
+        return self._query('is_book', 1)
 
 
 def load_podcasts(repo, podcast_file):
@@ -54,13 +53,13 @@ def pass_config(state):
 def podcasts():
     '''return the book/podcast entries'''
     load_podcasts(mod.repo, mod.config.get('PODCAST_FILE'))
-    return json.dumps([d._asdict() for d in mod.repo.books()])
+    return jsonify([d._asdict() for d in mod.repo.books()])
 
 
 @mod.route('/', methods=['GET'])
 def lists():
     '''return the list entries'''
-    return json.dumps([d._asdict() for d in mod.repo.lists()])
+    return jsonify([d._asdict() for d in mod.repo.lists()])
 
 
 @mod.route('/', methods=['POST'])
@@ -88,7 +87,7 @@ def put_list(idx):
 @cross_origin()
 def get_list(idx):
     '''return a specific playlist'''
-    return json.dumps(mod.repo.get(idx)._asdict())
+    return jsonify(mod.repo.get(idx)._asdict())
 
 
 @mod.route('/<idx>', methods=['DELETE'])

@@ -1,10 +1,9 @@
 '''scanner module for handling audio files on local drive'''
-import json
 import os
 import hashlib
 
 from collections import namedtuple
-from flask import Blueprint
+from flask import Blueprint, jsonify
 from flask_cors import CORS, cross_origin
 from webplayer.dbaccess import GenericRepo
 
@@ -20,11 +19,11 @@ class DirectoryRepo(GenericRepo):
 
     def albums(self) -> list:
         '''return music album directories'''
-        return self._query('is_book', False)
+        return self._query('is_book', 0)
 
     def books(self) -> list:
         '''return audio book directories'''
-        return self._query('is_book', True)
+        return self._query('is_book', 1)
 
 
 
@@ -94,28 +93,28 @@ def pass_config(state):
 @mod.route('/scan')
 def scan():
     '''scan default directories'''
-    return json.dumps([d._asdict() for d in mod.scanner.scan()])
+    return jsonify([d._asdict() for d in mod.scanner.scan()])
 
 
 @mod.route('/')
 @cross_origin()
 def albums():
     '''return the already scanned directory entries'''
-    return json.dumps([d._asdict() for d in mod.scanner.albums()])
+    return jsonify([d._asdict() for d in mod.scanner.albums()])
 
 
 @mod.route('/book/')
 @cross_origin()
 def books():
     '''return the already scanned directory entries'''
-    return json.dumps([d._asdict() for d in mod.scanner.books()])
+    return jsonify([d._asdict() for d in mod.scanner.books()])
 
 
 @mod.route('/<idx>', methods=['GET'])
 @cross_origin()
 def get_directory(idx):
     '''return a specific directory playlist'''
-    return json.dumps(mod.scanner.directory(idx)._asdict())
+    return jsonify(mod.scanner.directory(idx)._asdict())
 
 
 @mod.route('/<idx>', methods=['DELETE'])

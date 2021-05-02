@@ -1,7 +1,6 @@
 '''config manager functionality for podcasts and audiobooks'''
-import json
 from collections import namedtuple
-from flask import Blueprint, request, abort
+from flask import Blueprint, request, abort, jsonify
 from flask_cors import CORS, cross_origin
 from webplayer.dbaccess import GenericRepo
 
@@ -31,7 +30,7 @@ def create_config():
     body = request.json
     mod.repo.put(Config(**body))
 
-    return json.dumps(mod.repo.get(body['id'])._asdict())
+    return jsonify(mod.repo.get(body['id'])._asdict())
 
 
 @mod.route('/<idx>', methods=['GET'])
@@ -39,7 +38,7 @@ def get_bookmark(idx):
     '''get a specific config'''
     config = mod.repo.get(idx)
     if config:
-        return json.dumps(config._asdict())
+        return jsonify(config._asdict())
 
     return abort(404)
 

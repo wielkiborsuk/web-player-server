@@ -1,7 +1,6 @@
 '''bookmark manager functionality for podcasts and audiobooks'''
-import json
 from collections import namedtuple
-from flask import Blueprint, request, abort
+from flask import Blueprint, request, abort, jsonify
 from flask_cors import CORS, cross_origin
 from webplayer.dbaccess import GenericRepo
 
@@ -29,9 +28,9 @@ def _save_bookmark(repo, entry, overwrite=False):
     prev = repo.get(entry.id)
     if overwrite or not (prev and _is_after(prev, entry)):
         repo.put(entry)
-        return json.dumps(repo.get(entry.id)._asdict()), 200
+        return jsonify(repo.get(entry.id)._asdict()), 200
 
-    return json.dumps(repo.get(entry.id)._asdict()), 409
+    return jsonify(repo.get(entry.id)._asdict()), 409
 
 
 @mod.record_once
@@ -54,7 +53,7 @@ def create_bookmark():
 @mod.route('/')
 def list_bookmarks():
     '''list all existing bookmarks'''
-    return json.dumps([b._asdict() for b in _get_repo().list()])
+    return jsonify([b._asdict() for b in _get_repo().list()])
 
 
 @mod.route('/<idx>', methods=['PUT'])
@@ -74,7 +73,7 @@ def get_bookmark(idx):
     '''get a specific bookmark'''
     bookmark = _get_repo().get(idx)
     if bookmark:
-        return json.dumps(bookmark._asdict())
+        return jsonify(bookmark._asdict())
 
     return abort(404)
 
