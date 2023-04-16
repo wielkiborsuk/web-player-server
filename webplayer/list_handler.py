@@ -14,7 +14,7 @@ ListEntry = namedtuple('ListEntry', ['id', 'name', 'files', 'is_book'])
 class ListRepo(GenericRepo):
     '''repo for editable list objects'''
     def __init__(self, dbfile):
-        super().__init__(dbfile, 'lists', 'id', ListEntry)
+        super().__init__(dbfile, 'lists', ListEntry)
 
     def lists(self) -> ListEntry:
         '''return editable playlists'''

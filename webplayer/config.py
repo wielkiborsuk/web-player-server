@@ -13,7 +13,7 @@ Config = namedtuple('Config', ['id', 'sources', 'settings', 'timestamp'])
 class ConfigRepo(GenericRepo):
     '''repo for config objects'''
     def __init__(self, dbfile):
-        super().__init__(dbfile, 'configs', 'id', Config)
+        super().__init__(dbfile, 'configs', Config)
 
 
 @mod.record_once

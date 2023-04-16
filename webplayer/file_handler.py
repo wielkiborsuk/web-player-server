@@ -15,7 +15,7 @@ DirectoryEntry = namedtuple('DirectoryEntry', ['id', 'name', 'path', 'url', 'fil
 class DirectoryRepo(GenericRepo):
     '''repository for Directory objects'''
     def __init__(self, dbfile):
-        super().__init__(dbfile, 'directories', 'id', DirectoryEntry)
+        super().__init__(dbfile, 'directories', DirectoryEntry)
 
     def albums(self) -> list:
         '''return music album directories'''
@@ -73,7 +73,7 @@ class Scanner:
 
     @staticmethod
     def _get_files(files, base_url):
-        return [{'name': file_name, 'url': '{}/{}'.format(base_url, file_name)}
+        return [{'name': file_name, 'url': f'{base_url}/{file_name}'}
                 for file_name in files]
 
     @staticmethod
