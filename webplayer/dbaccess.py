@@ -49,7 +49,6 @@ class GenericSqlRepo(Generic[EntryType]):
 
     def put(self, obj: EntryType):
         '''put new or update an entry'''
-        print('putting', obj)
         with self.engine.begin() as conn:
             conn.execute(self.table.insert().values(id=obj.id, value=obj._asdict()))
 
@@ -73,7 +72,6 @@ class GenericSqlRepo(Generic[EntryType]):
     def _query(self, key, value) -> List:
         '''return music album directories'''
         with self.engine.connect() as conn:
-            print(' selecting files from db - ', key, value)
             rows = conn.execute(select(self.table).where(text(f"json_extract(value, '$.{key}') = {value}"))).fetchall()
             return [self.entry_type(**row[1]) for row in rows]
 
