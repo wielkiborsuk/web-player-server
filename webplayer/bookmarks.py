@@ -12,7 +12,7 @@ Bookmark = namedtuple('Bookmark', ['id', 'name', 'file', 'time'])
 class BookmarkRepo(GenericRepo):
     '''repo for bookmark objects'''
     def __init__(self, dbfile):
-        super().__init__(dbfile, 'bookmarks', 'id', Bookmark)
+        super().__init__(dbfile, 'bookmarks', Bookmark)
 
 
 def _get_repo():

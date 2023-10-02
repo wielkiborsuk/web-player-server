@@ -3,7 +3,7 @@ import os
 DEBUG = True
 
 BASE_PATH = os.path.expanduser('~/music')
-BASE_URL = 'http://localhost'
+BASE_URL = 'http://localhost:8000'
 
 DB_FILE = './testdb.db'
 
