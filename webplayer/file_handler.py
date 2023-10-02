@@ -83,7 +83,7 @@ class Scanner:
     def _map_to_dto(self, entry: DirectoryEntry) -> DirectoryDto:
         try:
             bookmark = self.bookmark_repo.get(entry.id)._asdict()
-        except ValueError as _:
+        except (AttributeError, ValueError) as _:
             bookmark = {}
 
         try:
