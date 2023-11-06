@@ -7,6 +7,6 @@ setup(
         include_package_data=True,
         zip_safe=False,
         install_requires=[
-            'flask', 'flask-cors', 'tinydb', 'pyyaml', 'sqlalchemy'
+            'flask', 'flask-cors', 'tinydb', 'pyyaml', 'sqlalchemy', 'ffmpeg-python'
             ]
         )
