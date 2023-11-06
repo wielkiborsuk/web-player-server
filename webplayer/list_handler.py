@@ -3,11 +3,13 @@ from collections import namedtuple
 from typing import List
 from os import path
 import yaml
+from multiprocessing import Process, Pool
 
 from flask import Blueprint, request, jsonify
 from flask_cors import CORS, cross_origin
 from webplayer.dbaccess import GenericRepo
 from webplayer.bookmarks import BookmarkRepo
+from webplayer.metadata import async_enrichment
 
 mod = Blueprint('list_handler', __name__, url_prefix='/list')
 cors = CORS(mod)
@@ -29,6 +31,13 @@ class ListRepo(GenericRepo):
         return self._query('is_book', 1)
 
 
+def _previous_files(repo, key):
+    old_list = repo.get(key)
+    if old_list:
+        return old_list.files
+    return []
+
+
 def load_podcasts(repo, podcast_file, force=False):
     '''load podcasts from selected podcatcher yaml export'''
     if not podcast_file:
@@ -40,12 +49,15 @@ def load_podcasts(repo, podcast_file, force=False):
     with open(podcast_file, 'r', encoding='utf-8') as url_file:
         url_map = yaml.safe_load(url_file)
         for key,value in url_map.items():
-            name_set = set()
-            file_list = [{'name': entry['filename'], 'url': entry['url']}
+            old_files = _previous_files(repo, key)
+            name_set = {fil['name'] for fil in old_files}
+            new_files = [{'name': entry['filename'], 'url': entry['url']}
                 for entry in value
                 if entry['filename'] not in name_set and not name_set.add(entry['filename'])]
-            entry = ListEntry(key, key, sorted(file_list, key=lambda e: e['name']), True)
+            entry = ListEntry(key, key, sorted(old_files + new_files, key=lambda e: e['name']), True)
             repo.put(entry)
+
+    async_enrichment(repo)
 
 
 def _map_to_dto(entry: ListEntry) -> ListDto:
@@ -93,7 +105,9 @@ def podcasts():
 @mod.route('/book/refresh', methods=['GET'])
 def podcast_refresh():
     '''return the book/podcast entries'''
-    load_podcasts(mod.repo, mod.config.get('PODCAST_FILE'), force=True)
+    job = Process(target=load_podcasts, args=(mod.repo, mod.config.get('PODCAST_FILE')),
+        kwargs={'force': True})
+    job.start()
     return jsonify({'message': 'OK'})
 
 

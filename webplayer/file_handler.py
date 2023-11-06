@@ -8,6 +8,7 @@ from flask import Blueprint, jsonify
 from flask_cors import CORS, cross_origin
 from webplayer.dbaccess import GenericRepo
 from webplayer.bookmarks import BookmarkRepo
+from webplayer.metadata import async_enrichment
 
 mod = Blueprint('file_handler', __name__, url_prefix='/file')
 cors = CORS(mod)
@@ -45,6 +46,7 @@ class Scanner:
         url = url or mod.config.get('BASE_URL', '/')
 
         self._scan(path, url)
+        async_enrichment(self.cache)
         return [self._map_to_dto(d) for d in self.cache.list()]
 
     def albums(self):
@@ -67,6 +69,12 @@ class Scanner:
         '''clear cached directory'''
         self.cache.delete(idx)
 
+    def _previous_files(self, root):
+        old_list = self.cache.get(self._hashsum(root))
+        if old_list:
+            return old_list.files
+        return []
+
     def _scan(self, path, url, look_for_books=False):
         for root, directories, files in os.walk(path):
             base_url = root.replace(path, url)
@@ -74,10 +82,10 @@ class Scanner:
                 directories[:] = []
                 self._scan(root, base_url, look_for_books=True)
                 continue
-            if any([(os.path.splitext(f)[1] in self.audio) for f in files]):
+            if any((os.path.splitext(f)[1] in self.audio) for f in files):
                 files = sorted([f for f in files if os.path.splitext(f)[1] in self.audio])
                 entry = DirectoryEntry(self._hashsum(root), os.path.basename(root),
-                        root, base_url, self._get_files(files, base_url), look_for_books)
+                        root, base_url, self._get_files(root, files, base_url), look_for_books)
                 self.cache.put(entry)
 
     def _map_to_dto(self, entry: DirectoryEntry) -> DirectoryDto:
@@ -107,10 +115,17 @@ class Scanner:
                 return idx
         return -1
 
-    @staticmethod
-    def _get_files(files, base_url):
-        return [{'name': file_name, 'url': f'{base_url}/{file_name}'}
-                for file_name in files]
+    def _get_files(self, root, files, base_url):
+        previous_files = self._previous_files(root)
+        previous_file_names = [fil['name'] for fil in previous_files]
+
+        new_files = [{
+            'name': file_name,
+            'url': f'{base_url}/{file_name}',
+            'path': os.path.join(root, file_name)
+        } for file_name in files if file_name not in previous_file_names]
+
+        return previous_files + new_files
 
     @staticmethod
     def _hashsum(path):

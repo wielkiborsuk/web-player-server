@@ -1,7 +1,7 @@
 '''an attempt at generic database access'''
 from typing import TypeVar, Generic, Type, List, Optional
 from tinydb import TinyDB, where
-from sqlalchemy import create_engine, MetaData, Table, Column, String, JSON, text, select, insert
+from sqlalchemy import create_engine, MetaData, Table, Column, String, JSON, text, select
 
 EntryType = TypeVar('EntryType')
 

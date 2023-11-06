@@ -5,3 +5,4 @@ jedi
 pylint
 pyyaml
 sqlalchemy
+ffmpeg-python
