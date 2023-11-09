@@ -4,7 +4,7 @@ import hashlib
 from typing import List
 
 from collections import namedtuple
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from flask_cors import CORS, cross_origin
 from webplayer.dbaccess import GenericRepo
 from webplayer.bookmarks import BookmarkRepo
@@ -40,13 +40,13 @@ class Scanner:
         self.cache = directory_repo
         self.bookmark_repo = bookmark_repo
 
-    def scan(self, path=None, url=None):
+    def scan(self, path=None, url=None, force_enrichment=False):
         '''scan local drive looking for audio files, provide base url to serve them from'''
         path = path or mod.config.get('BASE_PATH', os.path.expanduser('~'))
         url = url or mod.config.get('BASE_URL', '/')
 
         self._scan(path, url)
-        async_enrichment(self.cache)
+        async_enrichment.delay('file', mod.config.get('DB_FILE'), force=force_enrichment)
         return [self._map_to_dto(d) for d in self.cache.list()]
 
     def albums(self):
@@ -143,7 +143,8 @@ def pass_config(state):
 @mod.route('/scan')
 def scan():
     '''scan default directories'''
-    return jsonify([d._asdict() for d in mod.scanner.scan()])
+    return jsonify([d._asdict()
+        for d in mod.scanner.scan(force_enrichment=request.args.get('force', False, bool))])
 
 
 @mod.route('/')

@@ -6,3 +6,4 @@ pylint
 pyyaml
 sqlalchemy
 ffmpeg-python
+celery[redis]

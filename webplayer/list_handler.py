@@ -1,9 +1,7 @@
 '''scanner module for handling audio files on local drive'''
 from collections import namedtuple
 from typing import List
-from os import path
 import yaml
-from multiprocessing import Process, Pool
 
 from flask import Blueprint, request, jsonify
 from flask_cors import CORS, cross_origin
@@ -38,12 +36,9 @@ def _previous_files(repo, key):
     return []
 
 
-def load_podcasts(repo, podcast_file, force=False):
+def load_podcasts(repo, podcast_file, force_enrichment=False):
     '''load podcasts from selected podcatcher yaml export'''
     if not podcast_file:
-        return
-
-    if not force and (path.getmtime(podcast_file) < path.getmtime(mod.config.get('DB_FILE'))):
         return
 
     with open(podcast_file, 'r', encoding='utf-8') as url_file:
@@ -57,7 +52,7 @@ def load_podcasts(repo, podcast_file, force=False):
             entry = ListEntry(key, key, sorted(old_files + new_files, key=lambda e: e['name']), True)
             repo.put(entry)
 
-    async_enrichment(repo)
+    async_enrichment.delay('list', mod.config.get('DB_FILE'), force=force_enrichment)
 
 
 def _map_to_dto(entry: ListEntry) -> ListDto:
@@ -98,16 +93,14 @@ def pass_config(state):
 @mod.route('/book/', methods=['GET'])
 def podcasts():
     '''return the book/podcast entries'''
-    load_podcasts(mod.repo, mod.config.get('PODCAST_FILE'))
     return jsonify([_map_to_dto(d)._asdict() for d in mod.repo.books()])
 
 
 @mod.route('/book/refresh', methods=['GET'])
 def podcast_refresh():
     '''return the book/podcast entries'''
-    job = Process(target=load_podcasts, args=(mod.repo, mod.config.get('PODCAST_FILE')),
-        kwargs={'force': True})
-    job.start()
+    load_podcasts(mod.repo, mod.config.get('PODCAST_FILE'),
+        force_enrichment=request.args.get('force', False, bool))
     return jsonify({'message': 'OK'})
 
 
