@@ -1,0 +1,12 @@
+[Unit]
+Description=Celery worker for web-player project
+
+[Service]
+User=www-data
+Group=www-data
+ExecStart=/home/borsuk/workspace/player-venv/bin/celery -A webplayer.celery -l INFO
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
