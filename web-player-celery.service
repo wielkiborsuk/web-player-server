@@ -4,7 +4,8 @@ Description=Celery worker for web-player project
 [Service]
 User=www-data
 Group=www-data
-ExecStart=/home/borsuk/workspace/player-venv/bin/celery -A webplayer.celery -l INFO
+ExecStart=/home/borsuk/workspace/player-venv/bin/celery -A webplayer.celery worker -l INFO
+WorkingDirectory=/var/www/html/cgi-bin/
 Restart=on-failure
 
 [Install]
