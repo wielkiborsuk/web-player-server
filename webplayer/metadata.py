@@ -31,7 +31,7 @@ def reset_chapter_info(list_entry):
 def enrich_with_chapters(repo, force=False):
     start = time.time_ns()
     all_lists = repo.list()
-    with Pool(50) as pool:
+    with Pool(30) as pool:
         for lst in all_lists:
             entry = repo.get(lst.id)
             if force:
